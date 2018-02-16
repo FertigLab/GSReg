@@ -8,7 +8,7 @@ Rcpp::NumericMatrix Nij(const Rcpp::NumericMatrix &V)
     {
         for (unsigned i = 0; i < V.nrow(); ++i)
         {
-            for (unsigned j = 0; j < V.nrow(); ++j)
+            for (unsigned j = i + 1; j < V.nrow(); ++j)
             {
                 if (V(i,k) < V(j,k))
                 {
