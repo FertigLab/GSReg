@@ -5,5 +5,7 @@ export(	GSReg.GeneSets.EVA,
     GSReg.kendall.tau.distance.restricted,
     GSReg.kendall.tau.distance.template,
     GSReg.kendall.tau.distance,
+    GSReg.kendall.tau.distance.Wrap,
+    GSReg.GeneSets.EVA.Wrap,
 		GSReg.overlapJunction,
 		GSReg.SEVA)

@@ -4,6 +4,50 @@
 ##########        Elana J. Fertig ##########
 
 ###########################################
+#### EVA Wrapper Analysis Function
+###########################################
+
+GSReg.GeneSets.EVA.Wrap <- function(geneexpres,
+                                    pathways,
+                                    phenotypes,
+                                    incVec,
+                                    verbose = T,
+                                    minGeneNum = 5, 
+                                    distFunc = GSReg.kendall.tau.distance.Wrap,
+                                    distparamPathways, 
+                                    ... )
+{
+  #Checking the input data
+  GSReg.Check.input(prunedpathways=pathways,exprsdata=geneexpres,phenotypes=phenotypes)
+  #pruning the pathways
+  pathways <- GSReg.Prune(pathways,rownames(geneexpres), minGeneNum)
+  values <- vector(mode="list",length(pathways))
+  names(values) <- names(pathways)
+  samplesC1 <- which(phenotypes==levels(phenotypes)[1])
+  samplesC2 <- which(phenotypes==levels(phenotypes)[2])
+  rownames(incVec) <- rownames(geneexpres)
+  colnames(incVec) <- colnames(geneexpres)
+  if(missing(distparamPathways))
+  {
+    for(i in seq_along(pathways))
+    {
+      values[[i]] <- GSReg.Variance.Wrap(geneexpres[pathways[[i]],], incVec[pathways[[i]],], samplesC1, samplesC2,distFunc , ...)
+    }
+  }else{
+    valuesnames = names(values)
+    for(i in seq_along(pathways))
+    {
+      if(verbose == T & (i %% 100) == 0)
+        cat(i,"\n")
+      values[[i]] <- GSReg.Variance.Wrap(geneexpres[pathways[[i]],], incVec[pathways[[i]],],
+                                         samplesC1, samplesC2,distFunc,
+                                         distparamPathways[[valuesnames[i]]], ...)
+    }
+  }
+  return(values)
+}
+
+###########################################
 #### EVA Analysis Function
 ###########################################
 
@@ -76,6 +120,20 @@ GSReg.GeneSets.DIRAC <- function(geneexpres,pathways,phenotypes,Nperm=0, alpha =
   }else{
     return(list(mu1=mus$mu1,mu2=mus$mu2,pvalues=mus$pvalues, zscores = mus$zscores))
   }
+}
+
+##################################################
+##################################################
+### Calculate the normalized kendall-tau-distance between
+### columns of V
+### Outcome: Z(i,j) = #(I(I(V_l^i<V_k^i)!=I(V_l^j<V_k^j)))/(n(n-1)/2)
+##################################################
+
+GSReg.kendall.tau.distance.Wrap <- function(V,incVec){
+  #Checking if V is a numeric matrix 
+  GSReg.Check.input(V)
+  
+  return(GSReg.kendall.tau.distance.internal.Wrap(V,incVec))
 }
 
 ##################################################
