@@ -1,3 +1,5 @@
+/*
+
 #include <R.h>
 #include "math.h"
 
@@ -53,12 +55,11 @@ void vect2compC( double *vect, int *np,int *mp, double *comp)
                 }
 
         }   
-    }
-
-
-    
+    }  
     
 }
 
 
 }
+
+*/

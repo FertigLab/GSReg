@@ -7,7 +7,8 @@ Author: Bahman Afsari <bahman@jhu.edu>, Elana J. Fertig
 Maintainer: Bahman Afsari <bahman@jhu.edu>, Elana J. Fertig
  <ejfertig@jhmi.edu>
 Depends: R (>= 2.13.1), Homo.sapiens, org.Hs.eg.db, GenomicFeatures,
-        AnnotationDbi
+        AnnotationDbi, Rcpp
+LinkingTo: Rcpp
 Suggests: GenomicRanges, GSBenchMark
 Description: A package for gene set analysis based on the variability
     of expressions as well as a method to detect Alternative Splicing Events .
