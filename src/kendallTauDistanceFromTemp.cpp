@@ -23,7 +23,7 @@ Rcpp::NumericVector kendalltaudistFromTemp(const Rcpp::NumericMatrix &V, const R
                     }
                     else if ((d_ijk > 0.0 && temp > 0) || (d_ijk < 0.0 && temp < 0))
                     {
-                        D(k) += 1;
+                        D(k) += 1.0;
                     }
                 }
             }

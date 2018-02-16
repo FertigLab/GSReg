@@ -12,11 +12,11 @@ Rcpp::NumericMatrix Nij(const Rcpp::NumericMatrix &V)
             {
                 if (V(i,k) < V(j,k))
                 {
-                    N(i,j)++;
+                    N(i,j) += 1.0;
                 }
                 else if (V(i,k) > V(j,k))
                 {
-                    N(i,j)++;
+                    N(j,i) += 1.0;
                 }
             }
         }

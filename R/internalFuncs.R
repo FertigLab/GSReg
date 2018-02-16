@@ -253,14 +253,8 @@ GSReg.DIRAC.mu<-function(V, alpha = 0.0)
   GSReg.Check.input(V)
   n <- dim(V)[1]
   m <- dim(V)[2]
-  d <- Nij(V)
+  d <- Nij(matrix(as.double(V), nrow=nrow(V)))
   pij <- d/m
-  #d <-.C("Nij",
-  #       as.double(V),
-  #       as.integer(dim(V)[1]),
-  #       as.integer(dim(V)[2]),
-  #       as.double(matrix(data= 0 ,ncol=n,nrow=n)))
-  #pij = d[[4]]/m   #pij = p(V_i<V_j)
   
   dim(pij) <- c(n,n)
   rownames(pij) <- rownames(V)
@@ -340,7 +334,7 @@ GSReg.kendall.tau.distance.internal <- function(V){
   
   n <- dim(V)[1]
   m <- dim(V)[2]
-  dist <- kendalltaudist(V)
+  dist <- kendalltaudist(matrix(as.double(V), nrow=nrow(V)))
   dim(dist) <- c(m,m)
   rownames(dist) <- colnames(V)
   colnames(dist) <- colnames(V)
@@ -370,7 +364,8 @@ GSReg.kendall.tau.distance.Restricted.internal <- function(V, RestMat){
   n <- dim(V)[1]
   m <- dim(V)[2]
   
-  dist <- kendalltaudistRestricted(V, RestMat)
+  dist <- kendalltaudistRestricted(matrix(as.double(V), nrow=nrow(V)),
+    matrix(as.integer(RestMat), nrow=nrow(RestMat)))
   dim(dist) <- c(m,m)
   rownames(dist) <- colnames(V)
   colnames(dist) <- colnames(V)
@@ -400,7 +395,8 @@ GSReg.kendall.tau.distance.Restricted.Sparse.internal <- function(V, RestMat){
   n <- dim(V)[1]
   m <- dim(V)[2]
 
-  dist <- kendalltaudistRestricted(V, RestMat)
+  dist <- kendalltaudistRestricted(matrix(as.double(V), nrow=nrow(V)),
+    matrix(as.integer(RestMat), nrow=nrow(RestMat)))
   dim(dist) <- c(m,m)
   rownames(dist) <- colnames(V)
   colnames(dist) <- colnames(V)
@@ -422,7 +418,8 @@ GSReg.kendall.tau.distance.template.internal <- function(V, Temp){
   m <- dim(V)[2]
 
   matchedTemp <- Temp[rownames(V),rownames(V)]
-  mydist <- kendalltaudistFromTemp(V, matchedTemp)
+  mydist <- kendalltaudistFromTemp(matrix(as.double(V), nrow=nrow(V)),
+    matrix(as.integer(matchedTemp), nrow=nrow(matchedTemp)))
 
   names(mydist) <- colnames(V)
   return(mydist/(sum(Temp)-sum(diag(Temp))+1e-7))
