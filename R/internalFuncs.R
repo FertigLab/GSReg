@@ -471,14 +471,14 @@ GSReg.kendall.tau.distance.internal.Wrap <- function(V,incVec){
           as.double(incVec),
           as.double(matrix(data= 0 ,ncol=m,nrow=m)))
   dist <- d[[5]]
-  dim(dist) <- c(m,m)
-  for (i in 1:m){
-    for (j in 1:m){
-      tempI=sum(incVec[,i]&incVec[,j])
-      tempDenom=tempI*(tempI-1)/2
-      dist[i,j]=dist[i,j]/tempDenom
-    }
-  }
+  #dim(dist) <- c(m,m)
+  #for (i in 1:m){
+  #  for (j in 1:m){
+  #    tempI=sum(incVec[,i]&incVec[,j])
+  #    tempDenom=tempI*(tempI-1)/2
+  #    dist[i,j]=dist[i,j]/tempDenom
+  #  }
+  #}
   rownames(dist) <- colnames(V)
   colnames(dist) <- colnames(V)
   return(dist)
