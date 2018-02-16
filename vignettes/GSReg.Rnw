@@ -1,0 +1,1028 @@
+%%% Elana J. Fertig
+%%% November 28 2016
+%%% Baltimore
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\VignetteIndexEntry{Working with the GSReg package}
+%\VignetteKeywords{Gene Set Analysis, Analysis of Variation}
+%\VignettePackage{GSReg}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%% Begin Document
+\documentclass[12pt]{article}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%% Preamble
+%\input{preamble}
+\usepackage{fullpage}
+\usepackage{times}
+\usepackage[colorlinks=TRUE, urlcolor=blue, citecolor=blue]{hyperref}
+%\usepackage{graphicx}
+
+%%% Additional packages
+\usepackage{Sweave}
+\usepackage{authblk}
+\usepackage{color}
+\usepackage[usenames, dvipsnames]{xcolor}
+
+%%% Sweave options
+\SweaveOpts{prefix.string=plots, eps=FALSE,echo=TRUE, keep.source=TRUE}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% New commands for R stuff
+\newcommand{\software}[1]{\textsf{#1}}
+\newcommand{\R}{\software{R}}
+\newcommand{\Bioc}{\software{Bioconductor}}
+\newcommand{\Robject}[1]{{\texttt{#1}}}
+\newcommand{\Rfunction}[1]{{\texttt{#1}}}
+\newcommand{\Rpackage}[1]{{\texttt{#1}}}
+\newcommand{\Rclass}[1]{{\texttt{#1}}}
+\newcommand{\Rmethod}[1]{{\texttt{#1}}}
+\newcommand{\Rfunarg}[1]{{\texttt{#1}}}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% fancy Sweave
+\DefineVerbatimEnvironment{Sinput}{Verbatim}{xleftmargin=1em, fontshape=sl, formatcom=\color{MidnightBlue}, fontsize=\footnotesize}
+%\DefineVerbatimEnvironment{Sinput}{Verbatim} {xleftmargin=1em}
+\DefineVerbatimEnvironment{Soutput}{Verbatim}{xleftmargin=1em,fontshape=sl,formatcom=\color{OliveGreen}, fontsize=\footnotesize}
+%\DefineVerbatimEnvironment{Soutput}{Verbatim}{xleftmargin=1em}
+\DefineVerbatimEnvironment{Scode}{Verbatim}{xleftmargin=1em,fontshape=sl,formatcom=\color{BrickRed}, fontsize=\footnotesize}
+%\DefineVerbatimEnvironment{Scode}{Verbatim}{xleftmargin=1em}
+\fvset{listparameters={\setlength{\topsep}{0pt}}}
+
+\renewenvironment{Schunk}{\vspace{\topsep}}{\vspace{\topsep}}
+\DeclareGraphicsExtensions{.pdf} 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%% Title
+%\title{Computing and plotting Correspondence-At-Top (CAT) curves among ranked vectors of features}
+\title{GSReg: A Package for Gene Set Variability Analysis}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Authors 
+\author[1]{Bahman Afsari}
+\author[1]{Elana J. Fertig}
+
+%%% Affiliations
+\affil[1]{The Sidney Kimmel Comprehensive Cancer Center,
+  
+  Johns Hopkins University School of Medicine}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Date
+\date{Modified: April 8, 2014.  Compiled: \today}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Document
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+\setlength{\parskip}{0.2\baselineskip}
+\setlength{\parindent}{0pt}
+\setkeys{Gin}{width=\textwidth}
+
+\maketitle
+\tableofcontents
+
+<<start, eval=TRUE, echo=FALSE, cache=FALSE>>=
+options(width=85)
+options(continue=" ")
+#rm(list=ls())
+@ 
+
+%\newpage
+
+\section{ {\bf {Introduction}} }
+The \Rpackage{GSReg} package allows to analyze pathways based on the variability of the expression of sets of genes that are targets of those pathways. Basing this set statistic on variability enables inference of dysregulated pathways in diseases, including notably cancers. The first set statistic for gene variability was in the work of Eddy and his colleagues (see \cite{DIRAC2010}) which used a ranked based methodology called {\it DIRAC}. {\it DIRAC} calculates
+a measure of variability of the ordering of the expression of genes in a pathway for specific phenotype. The basic idea
+behind {\it DIRAC} is to generate a template for the pair-wise comparisons of gene expressions of a pathway within a phenotype. DIRAC calculates a measure of the variability of the ordering within the phenotype, i.e. the expected distance of a sample from the phenotype and the template of the phenotype. In mathematical terms, if we denote denote two i.i.d. samples from the same phenotypes by $X$ and $X'$ and $D$ Kendall-$\tau$-distance on the specific pathways, then the EVA \cite{EVA2014} statistic is $E(D(X,X'))$. It identifies significantly dysregulated pathways by estimating p-values from a permutation test. 
+Eddy et al. found that more pathological phenotypes usually have more pathways with higher variability compared to less pathological phenotypes. 
+\vspace{5 mm}
+
+
+However, the permutation test in DIRAC is computationally intensive and reaching low p-values may be impractical since they require a huge number of permutations. Low p-values are required for multiple hypothesis correction. A similar measure of variability of the orderings of gene sets was proposed in \cite{AfsariDiss}. This method approximates the p-value theoretically,  without a permutation test. This method is based on Kendall-$\tau$ distance \cite{kendalltaudistance} and the theory of U-Statistics, thus we call this method Gene Set Expression Variation Analysis (or in short EVA). Specifically, Kendall-$\tau$ distance between two expression profiles counts the number of disagreeing pairwise comparisons between two profiles. The EVA measures the variability of the gene expression of pathway genes from a phenotype by calculating the expectation of Kendall-$\tau$ distance between two random samples from the phenotype. EVA then identifies if the variability is significantly different across two phenotypes. To approximate this p-value EVA applies a U-Statistic Theory approach.
+
+%\vspace{5 mm}
+
+%Both {\it DIRAC} and {\it GS-$\tau$-REg} calculate order-based measures for each pathway. The basic idea behind {\it DIRAC} is to generate a template for the pair-wise comparisons of gene expressions of a pathway within a phnotype. {\it DIRAC} caculates a measure of the variability of the ordering within the phenotype, i.e. the expected distance a sample from the phenotype and the template of the phenotype. {\it DIRAC} caluclates the measure of variability for both disease and normal phenotype and for each pathway. {\it DIRAC} Considers pathways dysregulated if the measure of variability in disease and normal cells differs significantly. Emperical results showed that dysregulated pathways have usually higher variability in disease compared to normal. This can be justified by the hypothesis that diseased cell have higher variability compared to normal. 
+
+%\vspace{5 mm}
+
+%Since {\it DIRAC} calculation especially test of significance is computationally intensive,  we developed {\it GS-$\tau$-Reg}(\cite{AfsariDiss}), a similar approach but the p-value can be estimated theoretically and easier to interpret. The main idea behing the method is to replace the {\it DIRAC}'s measure of variability with a novel one. In the new measure, we calculate the expectation of the Kendall-$\tau$ distance between two randomly chosen sample from the phenotype. Kendall-$\tau$ distance between two vectors is the number of disagreeing pairwise comparison in two vectors.  
+\vspace{5 mm}
+The \Rpackage{GReg} package contains two following utilities:
+
+\begin{enumerate}
+  \item Identifying the dysregulated pathways with {\it DIRAC} measure of variability. The significance is calculated using permutation test. This is the first time that DIRAC analysis has been implemented in {\it R}. It also is more adaptable to new datasets than the original Matlab code in  \cite{DIRAC2010}.%Also, the original Matlab code in \cite{DIRAC2010} is not for users.
+  
+  \item Identifying the dysregulated pathways with {\it EVA} measure of variability. The significance is approximated through applying U-statistics theory. This is very time efficient and consistent with both {\it DIRAC} and applying permutation test on EVA. 
+  %\item Calculates dysregulation using any arbitrary distance and the theoretical p.values applying U-statistics theory.
+   
+\end{enumerate}
+
+\vspace{5 mm}
+
+
+
+\section{  \bf {Input Data} }
+
+
+
+
+
+\subsection{Data structure}
+
+In short, the \Rpackage{GSReg} package requires the following data in the following format:
+
+\begin{enumerate}
+\item Gene Expression Data
+  \begin{enumerate}
+    \item The expression be in the form of a matrix where rows represent genes (or probes) and columns represent samples.
+    \item The expression matrix cannot have NAs.
+    \item The expression matrix rows must have names of genes or the probes.
+  \end{enumerate}
+\item Pathways
+\begin{enumerate}
+\item The list of pathways must contain character vectors. Only the elements of the vectors which appear in rownames of the expression matrix are considered for analysis.
+\item The list of the pathways must have names for each vectors.
+\end{enumerate}
+\item Phenotypes
+\begin{enumerate}
+\item A factor with binary levels.
+\end{enumerate}
+\end{enumerate}
+\vspace{5 mm}
+We used the data provided in the \Rpackage{GSBenchMark} package to reproduce the results in Eddy et al. \cite{DIRAC2010}. The \Rpackage{GSBenchMark} contains data for the pathways as well as the gene expression and phenotype data from twelve studies.
+\vspace{5 mm}
+We load the information about the pathways from \Rpackage{GSBenchMark}:
+
+<<eval=TRUE,echo=TRUE,cache=FALSE>>=
+library(GSBenchMark)
+data(diracpathways)
+class(diracpathways)
+names(diracpathways)[1:5]
+class(diracpathways[[1]])
+@
+\vspace{5 mm}
+AS mentioned \Rpackage{GSReg} package requires the information of the pathways to be as a list of character vectors. Also, \Rpackage{GSReg} requires the pathways to have names. The variable \Robject{diracpathways} contains gene pathways. It is a list. Each element represents a pathway with its name. 
+Each elements contains a list of characters which represent the genes in the pathway. e.g. \Robject{diracpathways[["DEATHPATHWAY"]]}.
+
+\vspace{5 mm}
+Now, we load the datasets' names:
+
+<<eval=TRUE,echo=TRUE,cache=FALSE>>=
+data(GSBenchMarkDatasets)
+print(GSBenchMark.Dataset.names)
+@
+
+\vspace{5 mm}
+The remaining examples in this vignette rely on one of the datasets, i.e. ``squamous GDS2520.'' Similar analyses may be reproduces for other datasets by selecting a different element of ``GSBenchMark.Dataset.names.''
+\vspace{5 mm}
+<<eval=TRUE,echo=TRUE,cache=FALSE>>=
+DataSetStudy = GSBenchMark.Dataset.names[[9]]
+print(DataSetStudy)
+data(list=DataSetStudy)
+@
+\vspace{5 mm}
+The data consists of two variables: \Robject{exprsdata} and \Robject{phenotypes}. 
+\Robject{exprsdata} consists of a gene expression matrix where the rows and columns represent genes and the samples respectively. \Rpackage{GSReg} requires the rownames of gene expression variable represent the gene names, {\it i.e.} they are represented in the pathway information variable. 
+\vspace{5 mm}
+
+The \Robject{GSReg}  does not allow any missing data. To comply with the requirements we remove genes with NAs. The user may use any imputation to resolve this issue:
+\vspace{5 mm}
+<<>>=
+if(sum(apply(is.nan(exprsdata),1,sum)>0))
+  exprsdata = exprsdata[-which(apply(is.nan(exprsdata),1,sum)>0),];
+@
+\vspace{5 mm}
+One can extract the gene names by:
+<<>>=
+genenames = rownames(exprsdata);
+genenames[1:10]
+@
+
+%Also, it is possible that some of the genes in a pathway are not represented in the expression data or are too short (e.g. less than 5 genes). The functions in \Rpackage{GSReg} package provide can ignore the analysis of such short pathways based on the user-defined minimum length of pathway.   
+
+
+\section{Analysis of the pathways}
+
+
+Here, we demonstrate how to use the GSReg package to compute DIRAC and EVA statistics.
+
+%Most pathway analysis methods apply summarizing statistic on the genes in the pathway for both pathways and perform differential expression analysis. However, two methods implemented in this package analyze the internal interaction of the genes. These algorithms perform the analysis of interaction through calculation of some measures of variability of the ordering of the gene expressions of a pathway in samples from a phenotype. Then, they compare this variability measure across phenotypes and if the measures are significantly different, they call the pathway has been dysregulated in one of the phenotypes. An interesting finding from  \cite{DIRAC2010} is that among the pathways identified as dysregulated by {\it DIRAC}, pathways usually have higher variability in more dangerous phenotypes compared to less dangerous. This can be justified by the heterogeneity of pathological phenotypes. 
+
+%\vspace{5 mm}
+%Here, we explain the process of caulculating the measure of variability of {\it DIRAC} briefly for a specific phenotype and specific pathway. DIRAC defines a template for the samples and calculates a form of the distance between the template and the samples from the phenotype. To produce the template, DIRAC algorithm goes through all pairwise comparisons of gene expressions and generates a template for each comparison i.e., it generates one for a comparison which is likely more than the reverse and zero other wise. For each sample, we can similarly generate binary variables for comparisons, i.e. if the comparison is true, we set the corresponding variable to one and otherwise zero. The measure of variability of DIRAC is the expected Hamming distance between a sample in the phenotype and the template of the same phenotype.
+%\vspace{5 mm}
+%DIRAC goes through all pairwise comparisons of gene expressions and generates a template for all comparisons i.e., it generates one for a comparsion whish is likely more than the reverse and zero other wise. The measure of variability of DIRAC is the expected Hamming distance of samples in the phenotype to the template. find which comparisons are more likely than their reverse. calculates the expectation of hamming distance between this template and any samples within a phenotype.
+
+
+
+
+
+%Contrary to DIRAC, the measure of variability in GS-$\tau$-Reg has an easier interpretation for a specific phenotype and pathway. GS-$\tau$-Reg calculates the expected Kendall-$\tau$ distance between two randomly and independently samples from the phenotype. In other words, we measure how far (in Kendall-$\tau$ distance sense) are two random samples from the same phenotype. Kendall-$\tau$ or bubble sort distance between two vectors counts the number of disagreeing comparisons of two vectors \cite{kendalltaudistance}.
+%\vspace{5 mm}
+%In \cite{AfsariDiss}, we proposed GS-$\tau$-Reg method and showed how closely it is related to {\it DIRAC}. The main difference is in the way we calculate the p-value. {\it DIRAC} requires permutation test which is time consuming and it is practically impossible if we want to adjust p-value for multiple hypothesis testing; however, in \cite{AfsariDiss}, we showed that GS-$\tau$-Reg's p-value can be estimated efficiently using the U-statistic theory.
+
+
+\subsection{DIRAC Analysis}
+
+First, we load the library:
+<<eval=TRUE,echo=TRUE,cache=FALSE>>=
+library(GSReg)
+@
+\vspace{5 mm}
+
+The package also implements the alternative EVA statistic in the function \Robject{GSReg.GeneSets.DIRAC}. This function receives gene expression as \Robject{geneexpres}, the pathway information as \Robject{pathways} and phenotypes of samples as a factor with two levels and length equal to column number of \Robject{geneexpres}. {\it DIRAC} uses can use either a permutation test or normal approximation for p-value calculation; so, \Robject{GSReg.GeneSets.DIRAC} receives the number of permutations through (\Robject{Nperm}) with default value equal to 0 which indicates the normal approximation. 
+\vspace{5 mm}
+<<eval=TRUE, echo=TRUE, cache=FALSE>>=
+Nperm = 10
+system.time({DIRACperm =GSReg.GeneSets.DIRAC(exprsdata,diracpathways,phenotypes,Nperm=Nperm)})
+system.time({DIRACAn =GSReg.GeneSets.DIRAC(exprsdata,diracpathways,phenotypes)})
+
+@
+Here is the histogram  of the DIRAC p-values:
+<<eval=TRUE, echo=TRUE, cache=FALSE,fig=TRUE>>=
+hist(DIRACAn$pvalues,xlab="pvalue",main="Hist of pvalues applying DIRAC Analysis.")
+@
+
+To check if the approximations are reliable, we plot the z-scores calculated to approximate p-values versus the p-values from the permutation tests. 
+
+\begin{figure}
+
+<<eval=TRUE,echo=TRUE,fig=TRUE,pdf=TRUE>>=
+
+plot(x=abs(DIRACAn$zscores),y=DIRACperm$pvalues,xlab="|Z-score|",
+     ylab="p-value",col="red1",main="DIRAC p-value comparisons")
+zscorelin <- seq(min(abs(DIRACAn$zscores)),max(abs(DIRACAn$zscores)),by = 0.1)
+pvaltheoretic = (1-pnorm(zscorelin))*2
+lines(x=zscorelin,y=pvaltheoretic,type="l",pch=50,lty=5,col="darkblue")
+legend("topright",legend=c("permutation test","Normal Approx."),
+       col=c("red1","blue"),text.col=c("red1","blue"),
+       lty=c(NA,1),lwd=c(NA,2.5),pch=c(21,NA))
+@
+\caption{Comparing p-value from permutation test and normal approximation with only \Sexpr{Nperm} permutations. }\label{fig::theoempi10}
+
+\end{figure}
+ 
+
+
+
+\begin{figure}
+%   % Requires \usepackage{graphicx}
+   \includegraphics{DIRAC_comparison_squamous_GDS2520.pdf}
+   \caption{Theoretical p-value versus empirical p-value using 1000 permutations.}\label{fig::theoempiDIRAC}
+\end{figure}
+Figure \ref{fig::theoempiDIRAC} shows the result of comparing p-value DIRAC computing from 1000 permutation test and approximation using normal approximation (offline generated). 
+
+
+%Since both DIRAC and Kendall-$\tau$ are based on ranks and equivalently on comparisons, \Rpackage{GSReg} provides a fast 
+%fuction implemented in C and wrapped in R by function \Robject{GSReg.vect2comp}. The used can pass a matrix of the expressions. The rows represent genes and the columns represent samples. The outcome is a three dimensional array with zeros and ones. The third dimension represent samples and the first two represent the genes. The value of the element $(i,j,k)$ is 1 if in the $k$-th sample, the $i$-th gene is expressed less than $j$-th gene.   
+% <<>>=
+% #Looking at 10-th pathway
+% compspathway10 = (GSReg.Vect2Comp(exprsdata[diracpathwayPruned[[10]],]))
+% #Indicator if the first gene in the 10-th pathway is less than 
+% print(compspathway10[1,2,1])
+% print(exprsdata[diracpathwayPruned[[10]][1:2],1])
+% @
+ \subsection{EVA}
+ 
+ 
+ 
+ The package also implements the alternative EVA statistic in the function \Robject{GSReg.GeneSets.EVA}.  The function requires the similar inputs as \Robject{GSReg.GeneSets.DIRAC} (i.e. \Robject{geneexpres}, \Robject{pathways}, \Robject{phenotypes}) except it does not need \Robject{Nperm} since the p-value is not calculated through permutation test but through the mentioned U-statistic theory approach. 
+\vspace{5 mm}
+<<>>=
+#Calculating the variance for the pathways
+#Calculate how much it takes to calculate the statistics and their p-value for all pathways
+
+system.time({VarAnKendallV = GSReg.GeneSets.EVA(geneexpres=exprsdata,
+  pathways=diracpathways, phenotypes=as.factor(phenotypes)) })
+
+
+names(VarAnKendallV)[[1]]
+VarAnKendallV[[1]]
+@
+
+The output consists of a list. Each element of the list corresponds to a pathway. The element itself is a list. \Robject{E1} and \Robject{E2} are two fields  which contain the measure of variability for phenotype \Robject{levels(phenotypes)[1]} and  \Robject{levels(phenotypes)[2]} respectively. Other list elements are \Robject{pvalue} and \Robject{zscore} which are calculated through the theory of U-statistics and indicate the statistical significance of the difference between $E1$ and $E2$.
+
+\vspace{5 mm}
+
+\subsection{Comparison of DIRAC and EVA}
+
+We ran the following code to compare statistics from DIRAC and from EVA.
+\vspace{5 mm}
+<<eval=TRUE,echo=TRUE>>=
+Nperm = 10;
+VarAnPerm = vector(mode="list",length=Nperm)
+for( i in seq_len(Nperm))
+{
+  VarAnPerm[[i]] = GSReg.GeneSets.EVA(geneexpres=exprsdata, pathways=diracpathways, 
+                                           phenotypes=sample(phenotypes))
+}
+
+pvaluesperm = vector(mode="numeric",length=length(VarAnPerm[[1]]))
+
+for( i in seq_along(VarAnPerm[[1]]))
+{
+  z = sapply(VarAnPerm,function(x) x[[i]]$E1 - x[[i]]$E2)
+  pvaluesperm[i] = mean(abs(VarAnKendallV[[i]]$E1-VarAnKendallV[[i]]$E2)<abs(z)) 
+}
+ zscore = sapply(VarAnKendallV,function(x) x$zscore);
+ pvalustat = sapply(VarAnKendallV,function(x) x$pvalue);
+@
+
+\begin{figure}
+
+<<eval=TRUE,echo=TRUE,fig=TRUE,pdf=TRUE>>=
+ plot(x=abs(zscore),y=pvaluesperm,xlab="|Z-score|",
+  ylab="p-value",col="red1",main="p-value comparisons")
+ zscorelin = seq(0,6,0.1);
+ pvaltheoretic = (1-pnorm(zscorelin))*2
+ lines(x=zscorelin,y=pvaltheoretic,type="l",pch=50,lty=5,col="darkblue")
+
+  legend("topright",legend=c("permutation test","U-Stat Estimation"),
+         col=c("red","blue"),text.col=c("red","blue"),
+  lty=c(NA,1),lwd=c(NA,2.5),pch=c(21,NA))
+@
+\caption{Comparing p-value from permutation test and U-statistic theory with only \Sexpr{Nperm} permutations. }\label{fig::theoempi10}
+
+\end{figure}
+ 
+The figure represents that the theoretical p-value and p-value calculated from permutation test  in EVA are very similar and we can use the theoretical p-value as a surrogate for p-value. Here is the histogram.
+<<fig=TRUE>>=
+hist(x=pvalustat,breaks=20,main="P-value Hist of U-Stat",xlim=c(0,1))
+@
+
+
+
+\begin{figure}
+%   % Requires \usepackage{graphicx}
+   \includegraphics{plots-011-1000perm.pdf}
+   \caption{Theoretical p-value versus empirical p-value using 1000 permutations.}\label{fig::theoempi}
+\end{figure}
+Figure \ref{fig::theoempi} shows the result of comparing p-value EVA computing from 1000 permutation test and approximation using U-statistics theory (offline generated).
+
+To compare with the p-value of the DIRAC analysis, we show the p-values of DIRAC versus U-Statistic methodology:
+<<fig=TRUE>>=
+plot(x=DIRACAn$pvalues,y=pvalustat,xlab ="DIRAC",
+        ylab="EVA",main=sprintf("P-value Comparison corr=%2.2g",cor(x=DIRACAn$pvalues,y=pvalustat)))
+
+lmfit = lm(pvalustat~DIRACAn$pvalues-1)
+abline(lmfit)
+cor.test(x=DIRACAn$pvalues,y=pvalustat)
+@
+
+Also, the correlation of the p-values of DIRAC and U-Statistics is very high:
+<<eval=TRUE,echo=TRUE,cache=TRUE>>=
+cor(x=DIRACAn$pvalues,y=pvalustat)
+@
+
+\vspace{5 mm}
+If we use 1000 permutations instead of 10 permutations, we can see that the correlation is higher (0.88) as seen in Figure (\ref{fig::DIRAC_vs_G}). The dysregulated pathways identified by {\it DIRAC} are the following pathways: 
+\vspace{5 mm}
+<<echo=FALSE,eval=TRUE>>=
+load("DIRACAn.rda")
+significantPathwaysDIRAC = names(DIRACAn$mu1)[which(DIRACAn$pvalues<0.05)];
+print(significantPathwaysDIRAC)
+mu1 = DIRACAn$mu1[significantPathwaysDIRAC];
+mu2 = DIRACAn$mu2[significantPathwaysDIRAC];
+significantPathwaysGSV = names(which(pvalustat<0.05));
+eta1 = sapply(VarAnKendallV,function(x) x$E1)[significantPathwaysGSV];
+eta2 = sapply(VarAnKendallV,function(x) x$E2)[significantPathwaysGSV];
+@
+
+\begin{figure}
+%   % Requires \usepackage{graphicx}
+%   \includegraphics{DIRACvsGSReg.pdf}\\
+  
+
+<<eval=TRUE,echo=FALSE,fig=TRUE>>=
+  plot(x=DIRACAn$pvalues,y=pvalustat,xlab ="DIRAC",
+        ylab="EVA",main=sprintf("P-value Comparison corr=%2.2g",cor(x=DIRACAn$pvalues,y=pvalustat)))
+  lmfit = lm(pvalustat~DIRACAn$pvalues-1)
+abline(lmfit)
+@
+
+
+\caption{Comparing p-values EVA versus DIRAC. The correlation is 0.88.}\label{fig::DIRAC_vs_G}
+\end{figure}
+
+
+DIRAC and EVA have been shown mathematically similar. The main advantages of the EVA is efficiency in calculation as well as easier interpretation. Figure \ref{fig::DIRAC_vs_G} a graphical example of such comparison. One can see that the p-values generated by DIRAC and EVA have high correlation, i.e. 0.88. Note that EVA is much faster than DIRAC. For example, in this case, we ran the computations on a Lenovo Thinkpad with Core(TM) i7-3720QM Intel CPU @2.6 GHz. For a thousand permutation, the DIRAC analysis took 207.47 seconds while the latter only took 0.3 seconds. Note that for multiple hypothesis adjustment, a thousand permutations may not be satisfactory and we require hundreds of thousand or a million permutation which may not be feasible.  
+\vspace{5 mm}
+
+
+Note that it is possible that some of the genes in a pathway are not represented in the expression data or are too short (e.g. less than 5 genes). Both \Robject{GSReg.GeneSets.EVA} and \Robject{GSReg.GeneSets.DIRAC} may ignore such pathways through parameter \Robject{minGeneNum}. Please see the manual for more details.   
+\vspace{5 mm}
+If we the user wants to compare the results of DIRAC and EVA, they can run the following code for plot DIRAC diagram of significantly perturbed pathways: 
+\vspace{5 mm}
+<<eval=FALSE>>=
+DIRACAn =GSReg.GeneSets.DIRAC(exprsdata,diracpathways,phenotypes,Nperm=1000)
+@
+
+<<eval=TRUE,fig=TRUE>>=
+significantPathwaysDIRAC = names(DIRACAn$mu1)[which(DIRACAn$pvalues<0.05)];
+mu1 = DIRACAn$mu1[significantPathwaysDIRAC];
+mu2 = DIRACAn$mu2[significantPathwaysDIRAC];
+
+#The dysregulated pathways
+names(mu1)
+plot(x=mu1,y=mu2,
+     xlim=c(0,max(mu1,mu2)),ylim=c(0,max(mu1,mu2)),xlab="normal",ylab="disease",
+     main="(a)  DIRAC significantly dysregulated pathways")
+lines(x=c(0,max(mu1,mu2)),y=c(0,max(mu1,mu2)))
+@
+
+
+
+% The outcome looks like Figure \ref{fig::DIRAC}.
+% 
+% \begin{figure}
+% %   % Requires \usepackage{graphicx}
+%    \includegraphics{DIRAC.pdf}
+% \caption{The measure of conservation in DIRAC analysis for pathways which were significantly dysregulated.}\label{fig::DIRAC}
+% \end{figure}
+
+Now, if we do the analysis using EVA, we have:
+\vspace{5 mm}
+<<eval=TRUE,print=TRUE,fig=TRUE>>=
+significantPathwaysGSV = names(which(pvalustat<0.05));
+eta1 = sapply(VarAnKendallV,function(x) x$E1)[significantPathwaysGSV];
+eta2 = sapply(VarAnKendallV,function(x) x$E2)[significantPathwaysGSV];
+
+#The dysregulated pathways
+names(eta1)
+plot(x=eta1,y=eta2,xlim=c(0,max(eta1,eta2)),ylim=c(0,max(eta1,eta2)),xlab="normal",ylab="disease",
+     main="(b) EVA: Dysregulated pathways")
+lines(x=c(0,max(eta1,eta2)),y=c(0,max(eta1,eta2)))
+@
+
+\vspace{5 mm}
+Although there is discrepancy in identified dysregulated pathways (p-value<0.05), the general trend found in \cite{DIRAC2010} holds still true. The trend is that usually the dysregulated pathways have higher variability measure in more dangerous phenotypes. The figures reveal that both DIRAC and EVA have this property. DIRAC found \Sexpr{length(significantPathwaysDIRAC)} dysregulatd pathways and EVA discovered \Sexpr{length(significantPathwaysGSV)} pathways, \Sexpr{length(intersect(significantPathwaysGSV,significantPathwaysDIRAC))} pathways showed up in both analysis, and \Sexpr{length(union(significantPathwaysGSV,significantPathwaysDIRAC))} pathways were discovered totally. 
+\vspace{5 mm}
+<<eval=TRUE,print=TRUE,fig=FALSE>>=
+print(significantPathwaysGSV)
+print(significantPathwaysDIRAC)
+@
+\vspace{2 mm}
+
+% \subsection{Kendall-$\tau$ Operation}
+% \vspace{2 mm}
+% One useful function is a function which calculates the Kendall-$\tau$ distance. Notice that the operation of such function is very similar to that of the function \Robject{cor}. However, since applying this function may be time consuming, we implemented function $\Robject{GSReg.kendall.tau.distance}$. 
+
+% \section{ {\Large \bf {Alternative Distances}} }
+% 
+% The user may use alternative distances instead of Kendall-$\tau$ distance, {\it e.g.} Euclidean. We here apply Euclidean distant using the following function
+% <<fig=TRUE>>=
+% ### Calculating an alternative distance, i.e. Euclidean
+% #Calculating the variance for the pathways using distance
+% ptm <- proc.time()
+% VarAnEucl = GSReg.GeneSets.tau.Reg(geneexpres=exprsdata, pathways=diracpathwayPruned, 
+% phenotypes=as.factor(phenotypes), distFunc = function(x) as.matrix(dist(x))/dim(x)[1]) 
+% proc.time() - ptm
+% ### pvalues for Eucledian distance
+% pvaleucl = sapply(VarAnEucl,function(x) x$pvalue);
+% 
+% ## Hisogram of p-value of Eucledean Distance
+% hist(pvaleucl,xlab="pvalue",main="Hist of pvalues applying Euclidean distance.",breaks=20)
+% @
+% 
+% Comparison of pvalues:
+% <<fig=TRUE>>=
+% ## Comparisons of disctance and kendall-tau-distance
+% 
+% plot(x=pvalustat,y=pvaleucl,main="Comparisons of Kendall-tau and Eucledian Distance",xlab="p-value Kendall-\tau",ylab="p-value Euclidean")
+% @
+% 
+% We compare the U-statistics and permutation test. 
+% <<fig=TRUE>>=
+% ## Permutation test p-value
+% Nperm = 1000;
+% VarAnPermEucl = vector(mode="list",length=Nperm)
+% for( i in 1:Nperm)
+% {
+%   VarAnPermEucl[[i]] = GSReg.GeneSets.tau.Reg(geneexpres=exprsdata, pathways=diracpathwayPruned,
+%   phenotypes=sample(phenotypes), distFunc = function(x) as.matrix(dist(x))/dim(x)[1])
+% }
+% pvaluespermeucl = vector(mode="numeric",length=length(diracpathwayPruned))
+% 
+% for( i in 1:length(diracpathwayPruned))
+% {
+%   z = sapply(VarAnPermEucl,function(x) x[[i]]$E1 - x[[i]]$E2)
+%   pvaluespermeucl[i] = mean(abs(VarAnEucl[[i]]$E1-VarAnEucl[[i]]$E2)<abs(z)) 
+% }
+% 
+% zscoreeucl = sapply(VarAnEucl,function(x) x$zscore);
+% plot(x=abs(zscoreeucl),y=pvaluesperm,xlab="|Z-score|",ylab="p-value",col="red1",main="p-value comparisons")
+% lines(x=zscorelin,y=pvaltheoretic,type="l",pch=50,lty=5,col="darkblue")
+% 
+% legend("topright",legend=c("permutation test","U-Stat Estimation"),col=c("red","blue"),text.col=c("red","blue"),
+%   lty=c(NA,1),lwd=c(NA,2.5),pch=c(21,NA))
+% 
+% 
+% @
+
+% 
+% 
+%<<fig=TRUE>>=
+%  zscorelin = seq(0,6,0.1);
+%  pvaltheoretic = (1-pnorm(zscorelin))*2
+%  lines(x=zscorelin,y=pvaltheoretic,type="l",pch=50,lty=5,col="darkblue")
+% 
+% legend("topright",legend=c("permutation test","U-Stat Estimation"),col=c("red","blue"),text.col=c("red","blue"),
+% lty=c(NA,1),lwd=c(NA,2.5),pch=c(21,NA))
+%@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+
+\subsection{Splice-EVA Analysis}
+
+SEVA needs junction overlap matrices. This can be done by function \Robject{GSReg.overlapJunction}. Here is a piece of code which shows how to use this function.
+<<eval=TRUE,print=TRUE,fig=FALSE>>=
+require('Homo.sapiens')
+require('org.Hs.eg.db')
+require('GenomicRanges')
+
+data(juncExprsSimulated)
+
+
+overlapMat <- GSReg.overlapJunction(juncExprs =  junc.RPM.Simulated,
+                                    geneexpr = geneExrsGSReg)
+print(overlapMat[["Rest"]][["CMPK1"]])
+
+@
+
+Another important function is kendall-$\tau$ restricted. 
+<<eval=TRUE,print=TRUE,fig=FALSE>>=
+V <- cbind(c(1,5,3),c(3,2,1))
+rownames(V) <- c("F1","F2","F3")
+colnames(V) <- c("S1","S2")
+GSReg.kendall.tau.distance(V)
+
+myRest1 <- cbind(c(0,1,1),c(1,0,1),c(1,1,0))
+rownames(myRest1) <- rownames(V) 
+colnames(myRest1) <- rownames(V) 
+
+GSReg.kendall.tau.distance.restricted(V,myRest1)
+
+GSReg.kendall.tau.distance(V)
+
+myRest2 <- cbind(c(0,0,1),c(0,0,1),c(1,1,0))
+rownames(myRest2) <- rownames(V) 
+colnames(myRest2) <- rownames(V) 
+GSReg.kendall.tau.distance.restricted(V,myRest2)
+
+
+Temp1 <- cbind(c(0,1,1),c(0,0,0),c(0,1,0))
+rownames(Temp1) <- rownames(V)
+colnames(Temp1) <- rownames(V)
+
+GSReg.kendall.tau.distance.template(V,Temp = Temp1)
+@
+Now, we can use SEVA function and use the data from the paper \cite{LAMA3}.
+<<eval=TRUE,print=FALSE,fig=FALSE>>=
+
+data(juncExprsSimulated)
+SEVAjunc <- GSReg.SEVA(juncExprs = junc.RPM.Simulated,
+                       phenoVect = phenotypes,
+                       geneexpr = geneExrsGSReg)
+                       
+print(sapply(SEVAjunc,function(x) x$pvalue))
+#if you want to check Translational as well you can use 2 other p-values
+print(sapply(SEVAjunc,function(x) x$pvalueTotal))
+
+@  
+
+\pagebreak
+
+\section{ {\bf {System Information}}}
+Session information:
+
+<<sessioInfo, echo=TRUE, eval=TRUE, cache=FALSE, results=tex>>=
+toLatex(sessionInfo())
+@ 
+
+%\pagebreak
+\section{ { \bf {Literature Cited}} }
+   \bibliographystyle{unsrt}
+   \bibliography{./GSReg}
+
+\end{document}
+% Load the example data contained in the \Rpackage{matchBox} package.
+% <<loadmatchBoxExpression,eval=TRUE,echo=TRUE,cache=FALSE>>=
+% data(matchBoxExpression)
+% @
+% 
+% The object \Robject{matchBoxExpression} is a list of data.frames containing 
+%   differential gene expression analysis resulst from three distinct experiments.
+%   These data.frames will be used to retrieve the identifiers 
+%   and the ranking statistics for computing overlapping proportions displayed
+%   by the CAT curves.
+%   Below is shown the structure of \Robject{matchBoxExpression}:
+% 
+% <<eval=TRUE,echo=TRUE,cache=FALSE>>=
+% sapply(matchBoxExpression, class)
+% sapply(matchBoxExpression, dim)
+% str(matchBoxExpression)
+% @
+% 
+% 
+% \vspace{2 mm}
+% 
+% \subsection{Removing redundancy}
+%  In order to compute the CAT curves, and then compare the results 
+%   obtained from the three experiments, it is necessary to identify the set 
+%   of {\bf non-redundant}  features in common among the three data sets.
+%   The \Rfunction{filterRedundant} function enables to remove the redundant 
+%   features within each \Robject{data.frame} prior computing the subset of  
+%   of common identifiers across the three data sets.
+%   The argument \Rfunarg{idCol} specifies the index or the name 
+%   of the column containing redundant identifiers, 
+%   while the other arguments enable to control the method
+%   used to remove the redundancy, as explained in the help for this function.
+%   
+%   By default  the \Rfunction{filterRedundant} function will keep the feature
+%   with the largest absolute ranking statistics, as defined by the
+%   \Rfunarg{byCol} argument. The \Rfunarg{method} argument enables to 
+%   control which feature to keep and which to discard.
+%   Currently available methods are: \Rfunarg{maxORmin}, \Rfunarg{geoMean},
+%   \Rfunarg{random}, \Rfunarg{mean}, and \Rfunarg{median}
+%   (see help for  \Rfunction{filterRedundant}).
+% 
+%   In the example below we are using an \Rfunction{lapply} call to remove 
+%   the redundant features from all the three data.frames at once. 
+%   To this end we will use gene symbols to identify the redundant features
+%   and the t-statistics to select which feature to keep. 
+%   
+% <<eval=TRUE,echo=TRUE,cache=FALSE>>=
+% sapply(matchBoxExpression, function(x) any(duplicated(x[, 1])) )
+% allDataBySymbolAndT <- lapply(matchBoxExpression, filterRedundant, 
+%   		      idCol="SYMBOL", byCol="t", absolute=TRUE)
+% @
+% 
+%  Each data.frame now contains only unique features.
+% <<eval=TRUE,echo=TRUE,cache=FALSE>>=
+% sapply(allDataBySymbolAndT, dim)
+% sapply(allDataBySymbolAndT, function(x) any(duplicated(x[, 1])) )
+% @
+% 
+% 
+%   In the example below we are removing the redundant features
+%   using Enrez Gene identifiers to select the redundant features
+%   and the {\bf signed} log2 fold-change to select which feature to keep. 
+%   
+% <<eval=TRUE,echo=TRUE,cache=FALSE>>=
+% sapply(matchBoxExpression, function(x) any(duplicated(x[, 1])) )
+% allDataByEGIDAndLogFC <- lapply(matchBoxExpression, filterRedundant, 
+% 				idCol="ENTREZID", byCol="logFC", absolute=FALSE)
+% @
+% 
+%  Each of the data.frame now contains only unique features.
+% <<eval=TRUE,echo=TRUE,cache=FALSE>>=
+% sapply(allDataByEGIDAndLogFC, dim)
+% sapply(allDataByEGIDAndLogFC, function(x) any(duplicated(x[, 1])) )
+% @
+% 
+% 
+%   In the example below we are removing the redundant features
+%   using Enrez Gene identifiers to select the redundant features,
+%   and the median adjusted P-value will be used  to summarize 
+%   the redundant features.
+%   
+% <<eval=TRUE,echo=TRUE,cache=FALSE>>=
+% sapply(matchBoxExpression, function(x) any(duplicated(x[, 1])) )
+% allDataByEGIDAndMedianFDR <- lapply(matchBoxExpression, filterRedundant, 
+% 				    idCol="ENTREZID", byCol="adj.P.Val", absolute=FALSE,
+% 				    method="median")
+% @
+% 
+%  Each of the data.frame now contains only unique features.
+% <<eval=TRUE,echo=TRUE,cache=FALSE>>=
+% sapply(allDataByEGIDAndMedianFDR, dim)
+% sapply(allDataByEGIDAndMedianFDR, function(x) any(duplicated(x[, 1])) )
+% @
+% 
+% 
+% \subsection{Merging the data}
+%  After removing the redundant features it is now possible to obtain 
+%   the common unique features across all the data sets 
+%   using the function \Rfunction{mergeData}.
+%   This function finds the intersection across all the data.frames, 
+%   and extract the desired ranking statistics from each one.
+% 
+% <<eval=TRUE,echo=TRUE,cache=FALSE>>=
+% data <- mergeData(allDataBySymbolAndT, idCol="SYMBOL", byCol="t")
+% @
+% 
+%  The object \Robject{data} is a \Robject{data.frame} 
+%   containing only the common set of features across all three 
+%   data.frames and the ranking statistics values of choice 
+%   collected from each data.frame.
+% 
+% <<eval=TRUE,echo=TRUE,cache=FALSE>>=
+% sapply(allDataBySymbolAndT, dim)
+% dim(data)
+% str(data)
+% @
+% 
+% \section{ {\Large \bf {Correspondance at the Top Curves}}}
+% The \Rfunction{computeCat} {\R} function enables to compute the 
+% overlapping proportions of features among ranked vectors of identifiers. 
+% Such proportions will be subsequently used to produce the CAT curves.
+% When computing CAT curves a number of  paramenters must be specificied
+% to control the behaviour of the \Rfunction{computeCat} function.
+% In particular the following information will determine how the vectors of
+% will be ordered, and which vectors will be compaired, and 
+% therefore must be carefully considered:
+% 
+% \begin{itemize}
+% \item Whether or not the ranking statistics used to order the features 
+%   is signed ({\it i.e.} t-statistics or F-statistics like);
+% \item Whether the ranking statistics should be used to order the features 
+%   by decreasing or increasing order. For instance in the case of differential 
+%   gene expression between group A and B:
+%   \begin{itemize}
+%   \item Ordering by {\bf decreasing signed} t-statistics will compute the CAT 
+%     curve for the  genes up-regulated in group A compared to group B;
+%   \item Ordering by {\bf increasing signed} t-statistics will compute the CAT
+%     curve for  the genes down-regulated in group A compared to group B;
+%   \item Ordering by {\bf decreasing absolute} t-statistics will compute the CAT
+%     curve for the differentiallly expressed genes between the two groups;
+%   \item Ordering by {\bf increasing absolute} t-statistics will compute the CAT
+%     curve for the genes that {\bf are not differentially expressed} between 
+%     the two groups;
+%   \end{itemize}
+% \item Whether to compare all possible vector combinations, or to select one
+%   of the vectors as the reference;
+% \item Whether the overlapping proportion should be computed using equal ranks 
+%   or equal statistics;
+% \end{itemize}
+% 
+% 
+% \subsection{Computing CAT curves without  a reference ranking}
+% 
+% The example below shows how to compute CAT curves {\bf without} selecting 
+% one of the vectors  as the reference, using {\bf decreasing} ranks 
+% ({\it i.e.} up-regulated genes are at the top of the list):
+% 
+% <<eval=TRUE,echo=TRUE,cache=FALSE>>=
+% catHigh2LowNoRefByEqualRanks <- computeCat(data = data, idCol = 1, 
+% 					   method="equalRank", decreasing=TRUE)
+% @
+% 
+% The example below shows to compute CAT curves {\bf without} selecting 
+% a vector as the reference, using {\bf increasing} ranks 
+% ({\it i.e.} down-regulated genes are at the top of the list):
+% 
+% <<eval=TRUE,echo=TRUE,cache=FALSE>>=
+% catLow2HighNoRefByEqualRanks <- computeCat(data = data, idCol = 1, 
+% 					   method="equalRank", decreasing=FALSE)
+% @
+% 
+% 
+% \subsection{Computing CAT curves using a reference ranking}
+% 
+% The example below shows how to compute CAT curves selecting 
+% one of the vectors as the reference, using decreasing ranks:
+% 
+% <<eval=TRUE,echo=TRUE,cache=FALSE>>=
+% catHigh2LowWithRefByEqualRanks <- computeCat(data = data, idCol = 1, 
+% 					     ref="dataSetA.t",  method="equalRank", decreasing=TRUE)
+% @
+% 
+% The \Robject{catHigh2LowWithRefByEqualRanks} contains the computed overlaps,
+% for decreasing ranks ({\it i.e.} up-regulated genes are at the top of the list):
+% 
+% <<eval=TRUE,echo=TRUE,cache=FALSE>>=
+% str(catHigh2LowWithRefByEqualRanks)
+% @
+% 
+% The example below shows to compute CAT curves selecting one of the data set 
+% as reference, using decreasing t-statistics:
+% 
+% <<eval=TRUE,echo=TRUE,cache=FALSE>>=
+% catHigh2LowWithRefByEqualStats <- computeCat(data = data, idCol = 1, ref="dataSetA.t",
+% 					     method="equalStat", decreasing=TRUE)
+% @
+% 
+% The \Robject{catHigh2LowWithRefByEqualStats} contains the computed overlaps:
+% for decreasing t-statistics ({\it i.e.} down-regulated genes):
+% 
+% <<eval=TRUE,echo=TRUE,cache=FALSE>>=
+% str(catHigh2LowWithRefByEqualStats)
+% @
+% 
+% \subsection{Computing Probability Intervals}
+% The \Rfunction{calcHypPI} {\R} function enables to compute
+% the probability intervals for the CAT curves {\bf obtained using equal ranks}.
+% Such intervals are based on the hypergeometric distribution
+% (see Irizarry et al \cite{Irizarry2005} and Ross et al. \cite{Ross:2011dm}).
+% Briefly, the \Rfunction{calcHypPI} uses \Rfunction{qhyper} quantile function
+% to compute the {\bf expected} proportions of common features between 
+% two ordered vectors of identifiers for a set of specified quantiles 
+% of the hypergeometric distribution. 
+% 
+% \vspace{5 mm}
+% To understand the way such proportions are obtained
+% we can use the analogy of drawing a certain number of balls 
+% from an urn containing black and white balls, where black
+% represents a failure (the vectors are in different order, 
+% and therefore the features do not overlap),
+% and white represent a success (the vectors are in the same order,
+% and hence the features overlap).
+% According to this analogy the \Rfunction{calcHypPI} function 
+% uses the total number of features in common between the vectors
+% as the total number of balls in the urn, 
+% and the size of the vector being compared as the number of 
+% balls drawn from the urn.
+% Thus increasing vectors sizes (1, 2, 3, and so on until all features are used)
+% correspond to an increasing number of balls drawn from the urn at each attempt.
+% 
+% \vspace{5 mm}
+% By default the \Rfunction{calcHypPI} function assumes that the top 10\% 
+% of the features of the two vectors are similarly ordered. In our analogy, 
+% therefore, the number of white balls in the urn corresponds to 10\%
+% of the total common features between the vectors.
+% This expectation can be modified by the user with the \Rfunarg{expectedProp} 
+% argument. When \Rfunarg{expectedProp} is set equal to \Rfunarg{NULL}
+% the number of white balls in the urn
+% (i.e. the top ranking features in the correct order)
+% corresponds to the number of balls that are drawn
+% at each attempt (i.e. the increasing size of top features
+% from each vector that are being compared).
+% 
+% \vspace{5 mm}
+% The example below shows how to compute probability intervals for CAT curves,
+% using the default 0.1 expected proportion of top ranked features:
+% 
+% <<eval=TRUE,echo=TRUE,cache=FALSE>>=
+% PIbyRefEqualRanks <- calcHypPI(data=data)
+% @
+% 
+% The \Robject{PIbyRefEqualRanks} contains the computed
+% probability intervals for the CAT curves:
+% 
+% <<eval=TRUE,echo=TRUE,cache=FALSE>>=
+% head(PIbyRefEqualRanks)
+% @
+% 
+% The example below shows how to compute probability intervals for CAT curves,
+% setting the expected proportion of top ranked features to $0.3$:
+% 
+% <<eval=TRUE,echo=TRUE,cache=FALSE>>=
+% PIbyRefEqualRanks03 <- calcHypPI(data=data, expectedProp=0.3)
+% @
+% 
+% The \Robject{PIbyRefEqualRanks03} contains the computed
+% probability intervals for the CAT curves:
+% 
+% <<eval=TRUE,echo=TRUE,cache=FALSE>>=
+% head(PIbyRefEqualRanks03)
+% @
+% 
+% The example below shows how to compute probability intervals for CAT curves,
+% using the default 0.1 expected proportion of top ranked features, 
+% for a set of specific hypergeometric distribution quantiles:
+% 
+% <<eval=TRUE,echo=TRUE,cache=FALSE>>=
+% PIbyRefEqualRanksQuant <- calcHypPI(data=data, prob=c(0.75, 0.9, 0.95, 0.99) )
+% @
+% 
+% The \Robject{PIbyRefEqualRanksQuant} contains the computed
+% probability intervals for the CAT curves:
+% 
+% <<eval=TRUE,echo=TRUE,cache=FALSE>>=
+% head(PIbyRefEqualRanksQuant)
+% @
+% 
+% The example below shows how to compute probability intervals for CAT curves,
+% without specifying a proportion of expected top ranked features:
+% 
+% <<eval=TRUE,echo=TRUE,cache=FALSE>>=
+% PIbyRefEqualRanksNoExpectedProp <- calcHypPI(data=data, expectedProp=NULL)
+% @
+% 
+% The \Robject{PIbyRefEqualRanksNoExpectedProp} contains the computed
+% probability intervals for the CAT curves:
+% 
+% <<eval=TRUE,echo=TRUE,cache=FALSE>>=
+% head(PIbyRefEqualRanksNoExpectedProp)
+% @
+% 
+% \section{ {\Large \bf {Plotting the results}}}
+% 
+% The \Rfunction{plotCat} function can be used to plot the CAT curves
+% along with probability intervals, as derived using the \Rfunction{calcHypPI} 
+% function (see Figures~\ref{fig:one} and ~\ref{fig:two}, 
+% for CAT curves computed using a reference ranking, Figure~\ref{fig:three} 
+% for examples in which the reference was not used, 
+% and Figure~\ref{fig:four} for CAT curves for which the proportion
+% of expected top ranked features was not specified).
+% 
+% \begin{figure}[htp]
+%   \subsection{CAT curves based on equal ranks using a reference.}
+% 
+%   The example below shows how to plot CAT curves based on equal ranks,
+%   along with probability intervals based on a fixed expected proportion
+%   of similarly ranked features of 30\%, using the data set A as the reference.
+% 
+%   \begin{center}
+%   \setkeys{Gin}{width=0.75\textwidth}
+% <<label=fig1,eval=TRUE,echo=TRUE,cache=FALSE,fig=TRUE, width=10, height=6>>=
+% plotCat(catData = catHigh2LowWithRefByEqualRanks, 
+% 	preComputedPI=PIbyRefEqualRanks03,
+% 	cex=1.2, lwd=1.2, cexPts=1.2, spacePts=30, col=c("red", "blue"),
+% 	main="CAT curves for decreasing t-statistics",
+% 	where="center", legend=TRUE, legCex=1, ncol=1,
+% 	plotLayout = layout(matrix(1:2, ncol = 2), widths = c(2,1)))
+% @
+% \end{center}
+% \caption{\small CAT-plot for curves based on equal ranks, using data set A as the reference.
+%  Lighter to darker grey shades represent probability intervals for distinct quantiles 
+%  of the hypergeometric distribution (0.999999, 0.999,  0.99, 0.95), assuming
+%  30\% of the features to be similarly ranked.}
+% \label{fig:one}
+% \end{figure}
+% 
+% \begin{figure}[htp]
+%   \subsection{CAT curves based on equal statistics using a reference.}
+% 
+%   The example below shows how to plot CAT curves based on equal statistics,
+%   using the data set A as the reference.
+%   When equal ranks are used each CAT curve has its own probability intervals,
+%   which therefore cannot be shown on the plot. 
+% 
+%   \begin{center}
+%   \setkeys{Gin}{width=0.75\textwidth}
+% <<label=fig2,eval=TRUE,echo=TRUE,cache=FALSE,fig=TRUE, width=10, height=6>>=
+% plotCat(catData = catHigh2LowWithRefByEqualStats, 
+% 	cex=1.2, lwd=1.2, cexPts=1.2, spacePts=30, col=c("red", "blue"), 
+% 	main="CAT curves for decreasing t-statistics",
+% 	where="center", legend=TRUE, legCex=1, ncol=1,
+% 	plotLayout = layout(matrix(1:2, ncol = 2), widths = c(2,1)))
+% @
+% \end{center}
+% \caption{\small CAT-plot for curves based on equal t-statistics, using data set A as the reference.}
+% \label{fig:two}
+% \end{figure}
+% 
+% 
+% \begin{figure}[htp]
+%   \subsection{CAT curves based on equal ranks without using a reference.}
+% 
+%   The example below shows how to plot CAT curves based on equal ranks,
+%   along with probability intervals based on a fixed expected proportion
+%   of similarly ranked features of 10\%, without using any data set as the 
+%   reference (all pair combinations are shown).
+% 
+%   \begin{center}
+%   \setkeys{Gin}{width=0.75\textwidth}
+% <<label=fig3,eval=TRUE,echo=TRUE,cache=FALSE,fig=TRUE, width=10, height=6>>=
+% plotCat(catData = catHigh2LowNoRefByEqualRanks, 
+% 	preComputedPI=PIbyRefEqualRanks,
+% 	cex=1.2, lwd=1.2, cexPts=1.2, spacePts=30,
+% 	main="CAT curves for decreasing t-statistics",
+% 	where="center", legend=TRUE, legCex=1, ncol=1,
+% 	plotLayout = layout(matrix(1:2, ncol = 2), widths = c(2,1)))
+% @
+% \end{center}
+% \caption{\small CAT-plot for curves based on equal ranks for all possible combinations of vectors.
+%  Lighter to darker grey shades represent probability intervals for the distinct  quantiles 
+%  of the hypergeometric distribution (0.999999, 0.999,  0.99, 0.95), assuming
+%  10\% of the features to be similarly ranked.}
+% \label{fig:three}
+% \end{figure}
+% 
+% 
+% \begin{figure}[htp]
+%   \subsection{CAT curves based on equal ranks, unspecified expected 
+%     proportion of corresponding features.}
+% 
+%   The example below shows how to plot CAT curves based on equal ranks,
+%   along with probability intervals based on an unspecified expected proportion
+%   of similarly ranked features, without using any data set as the 
+%   reference (all pair combinations are shown).
+% 
+%   \begin{center}
+%   \setkeys{Gin}{width=0.75\textwidth}
+% <<label=fig4,eval=TRUE,echo=TRUE,cache=FALSE,fig=TRUE, width=10, height=6>>=
+% plotCat(catData = catHigh2LowNoRefByEqualRanks, 
+% 	preComputedPI=PIbyRefEqualRanksNoExpectedProp,
+% 	cex=1.2, lwd=1.2, cexPts=1.2, spacePts=30,
+% 	main="CAT curves for decreasing t-statistics",
+% 	where="center", legend=TRUE, legCex=1, ncol=1,
+% 	plotLayout = layout(matrix(1:2, ncol = 2), widths = c(2,1)))
+% @
+% \end{center}
+% \caption{\small CAT-plot for curves based on equal ranks for all possible combinations of vectors.
+%  Lighter to darker grey shades represent probability intervals for distinct  quantiles 
+%  of the hypergeometric distribution (0.999999, 0.999,  0.99, 0.95). No expected proportion
+%  of similarly ranked features is specified.}
+% \label{fig:four}
+% \end{figure}
