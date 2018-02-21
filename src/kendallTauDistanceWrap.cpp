@@ -185,13 +185,13 @@ Rcpp::NumericVector kendalltaudistWrap(const Rcpp::NumericVector vect,const  int
     double tempTauDist;
     for(k=0;k<m;k++){
       for (i=0;i<n;i++){
-        x[i]=(vect[i+k*n]);
-        xc[i]=(incVec[i+k*n]);
+        x[i]=vect[i+k*n];
+        xc[i]=incVec[i+k*n];
       }
       for(l=k+1;l<m;l++){
         for(i=0;i<n;i++){
-            y[i]=(vect[i+k*n]);
-            yc[i]=(incVec[i+l*n]);
+            y[i]=vect[i+l*n];
+            yc[i]=incVec[i+l*n];
         }
         tempTauDist=ktau_p(x,xc,y,yc);      //computes cenken for each pair of vectors
         dist[k+l*m]=tempTauDist;
