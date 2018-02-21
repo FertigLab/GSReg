@@ -460,7 +460,7 @@ GSReg.kendall.tau.distance.internal.Wrap <- function(V,incVec){
   
   n <- dim(V)[1]
   m <- dim(V)[2]
-  dist <- kendalltaudistWrap(as.double(V),as.integer(n),as.integer(m),as.double(incVec))
+  dist <- kendalltaudistWrap(as.vector(V),as.integer(n),as.integer(m),as.vector(incVec))
   #d <- .C("kendalltaudistWrap",
   #        as.double(V),
   #        as.integer(dim(V)[1]),

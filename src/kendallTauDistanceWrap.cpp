@@ -25,9 +25,7 @@ double Minimum(double *vec){
 double vector_min(vector<double> vec){
     double out=10^7;
     for (int i=0;i<vec.size();i++){
-        if(out>vec[i]){
-            out=vec[i];
-        }
+        if(out>vec[i]){out=vec[i];}
     }
     return out;
 }
@@ -53,7 +51,7 @@ vector<double> vector_scaAdd(vector<double> vec, double scal){
     return out;
 }
 vector<double> vector_diff(vector<double> vec){
-    vector<double> out(vec.size());
+    vector<double> out(vec.size()-1);
     for(int i=0;i<(vec.size()-1);i++){
         out[i]=vec[i+1]-vec[i];
     }
@@ -81,10 +79,11 @@ vector<double> vector_Prod(vector<double> vec1, vector<double> vec2){
     return out;
 }
 vector<double> outer_Sub(vector<double> vec1, vector<double> vec2){
-    vector<double> out(vec1.size());
-    for(int i=0;i<vec1.size();i++){
-        for(int j=0;j<vec2.size();j++){
-            out[i]=(vec1[i]-vec2[j]);
+    vector<double> out(vec1.size()*vec2.size());
+    int i,j;
+    for(i=0;i<vec1.size();i++){
+        for(j=0;j<vec2.size();j++){
+            out[j+i*vec1.size()]=(vec1[i]-vec2[j]);
         }
     }
     return out;
@@ -118,7 +117,7 @@ double ktau_p(vector<double> x, vector<double> xcen, vector<double> y, vector<do
     sy.erase(unique(sy.begin(),sy.end()),sy.end());
     double delx=vector_min(vector_diff(sx))/1000;
     double dely=vector_min(vector_diff(sy))/1000;
-    Rcpp::Rcout<<delx<<" "<<dely<<" ";
+    // Correct up until here! 
     vector<double> dupx=vector_sub(xx,vector_scaMul(cx,delx));
     vector<double> diffx=outer_Sub(dupx,dupx);
     vector<double> diffcx=outer_Sub(cx,cx);
@@ -162,7 +161,6 @@ double ktau_p(vector<double> x, vector<double> xcen, vector<double> y, vector<do
     //double kenS=itot/2;
     tau=itot/(n*(n-1));
     double out=0.5-tau/2;
-    Rcpp::Rcout<<itot<<" "<<tau<<" "<<out<<std::endl;
     //double J=n*(n-1)/2;
     //tau_b=kenS/sqrt((J-tt)*(J-uu));
     return out;
