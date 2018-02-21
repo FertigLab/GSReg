@@ -160,9 +160,10 @@ double ktau_p(vector<double> x, vector<double> xcen, vector<double> y, vector<do
     double itot=vector_sum(vector_Prod(signyx,vector_Prod(vector_scaAdd(vector_scaMul(xplus,-1),1),vector_scaAdd(vector_scaMul(yplus,-1),1))));
     //double kenS=itot/2;
     tau=itot/(n*(n-1));
+    double out=0.5-tau/2;
     //double J=n*(n-1)/2;
     //tau_b=kenS/sqrt((J-tt)*(J-uu));
-    return (0.5-tau/2);
+    return out;
 }
 
 // [[Rcpp::export]]
@@ -181,7 +182,7 @@ Rcpp::NumericVector kendalltaudistWrap(const Rcpp::NumericVector vect,const  int
     vector<double> y(n);
     vector<double> xc(n);
     vector<double> yc(n);
-    int tempTauDist;
+    double tempTauDist;
     for(k=0;k<m;k++){
       for (i=0;i<n;i++){
         x[i]=(vect[i+k*n]);
