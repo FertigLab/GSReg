@@ -40,6 +40,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// kendalltaudistWrap
+Rcpp::NumericVector kendalltaudistWrap(const Rcpp::NumericVector vect, const int np, int mp, const Rcpp::NumericVector incVec);
+RcppExport SEXP _GSReg_kendalltaudistWrap(SEXP vectSEXP, SEXP npSEXP, SEXP mpSEXP, SEXP incVecSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector >::type vect(vectSEXP);
+    Rcpp::traits::input_parameter< const int >::type np(npSEXP);
+    Rcpp::traits::input_parameter< int >::type mp(mpSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector >::type incVec(incVecSEXP);
+    rcpp_result_gen = Rcpp::wrap(kendalltaudistWrap(vect, np, mp, incVec));
+    return rcpp_result_gen;
+END_RCPP
+}
 // Nij
 Rcpp::NumericMatrix Nij(const Rcpp::NumericMatrix& V);
 RcppExport SEXP _GSReg_Nij(SEXP VSEXP) {
@@ -56,6 +70,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_GSReg_kendalltaudist", (DL_FUNC) &_GSReg_kendalltaudist, 1},
     {"_GSReg_kendalltaudistFromTemp", (DL_FUNC) &_GSReg_kendalltaudistFromTemp, 2},
     {"_GSReg_kendalltaudistRestricted", (DL_FUNC) &_GSReg_kendalltaudistRestricted, 2},
+    {"_GSReg_kendalltaudistWrap", (DL_FUNC) &_GSReg_kendalltaudistWrap, 4},
     {"_GSReg_Nij", (DL_FUNC) &_GSReg_Nij, 1},
     {NULL, NULL, 0}
 };

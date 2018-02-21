@@ -13,9 +13,11 @@ kendalltaudistRestricted <- function(V, R) {
     .Call('_GSReg_kendalltaudistRestricted', PACKAGE = 'GSReg', V, R)
 }
 
+kendalltaudistWrap <- function(vect, np, mp, incVec) {
+    .Call('_GSReg_kendalltaudistWrap', PACKAGE = 'GSReg', vect, np, mp, incVec)
+}
+
 Nij <- function(V) {
     .Call('_GSReg_Nij', PACKAGE = 'GSReg', V)
 }
-kendalltaudistWrap <- function(V,n,m,incVec){
-	.Call('_GSReg_kendalltaudistWrap',PACKAGE='GSReg',V,n,m,incVec)
-}
+

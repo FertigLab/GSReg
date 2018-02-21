@@ -32,9 +32,9 @@ double vector_min(vector<double> vec){
     return out;
 }
 vector<double> vector_abs(vector<double> vec){
-    vector<double> out;
+    vector<double> out(vec.size());
     for(int i=0;i<vec.size();i++){
-        out.push_back(abs(vec[i]));
+        out[i]=abs(vec[i]);
     }
     return out;
 }
@@ -46,70 +46,69 @@ double vector_sum(vector<double> vec){
     return out;
 }
 vector<double> vector_scaAdd(vector<double> vec, double scal){
-    vector<double>out;
+    vector<double> out(vec.size());
     for(int i=0;i<vec.size();i++){
-        out.push_back(vec[i]+scal);
+        out[i]=vec[i]+scal;
     }
     return out;
 }
 vector<double> vector_diff(vector<double> vec){
-    vector<double> out;
+    vector<double> out(vec.size());
     for(int i=0;i<(vec.size()-1);i++){
-        out.push_back(vec[i+1]-vec[i]);
+        out[i]=vec[i+1]-vec[i];
     }
     return out;
 }
 vector<double> vector_sub(vector<double> vec1,vector<double> vec2){
-    vector<double> out;
+    vector<double> out(vec1.size());
     for(int i=0;i<vec1.size();i++){
-        out.push_back(vec1[i]-vec2[i]);
+        out[i]=vec1[i]-vec2[i];
     }
     return out;
 }
 vector<double> vector_scaMul(vector<double> vec, double scal){
-    vector<double> out;
+    vector<double> out(vec.size());
     for(int i=0;i<vec.size();i++){
-        out.push_back(vec[i]*scal);
+        out[i]=vec[i]*scal;
     }
     return out;
 }
 vector<double> vector_Prod(vector<double> vec1, vector<double> vec2){
-    vector<double> out;
+    vector<double> out(vec1.size());
     for(int i=0;i<vec1.size();i++){
-        out.push_back(vec1[i]*vec2[i]);
+        out[i]=(vec1[i]*vec2[i]);
     }
     return out;
 }
 vector<double> outer_Sub(vector<double> vec1, vector<double> vec2){
-    vector<double> out;
+    vector<double> out(vec1.size());
     for(int i=0;i<vec1.size();i++){
         for(int j=0;j<vec2.size();j++){
-            out.push_back(vec1[i]-vec2[j]);
+            out[i]=(vec1[i]-vec2[j]);
         }
     }
     return out;
 }
 vector<double> sign(vector<double> vec){
-    vector<double> out;
+    vector<double> out(vec.size());
     for(int i=0;i<vec.size();i++){
-        if(vec[i]<0){out.push_back(-1);}
-        else if(vec[i]>0){out.push_back(1);}
-        else {out.push_back(0);}
+        if(vec[i]<0){out[i]=(-1);}
+        else if(vec[i]>0){out[i]=(1);}
+        else {out[i]=(0);}
     }
     return out;
 }
 
-double ktau_p(double *x, double *xcen, double *y, double *ycen){
+double ktau_p(vector<double> x, vector<double> xcen, vector<double> y, vector<double> ycen){
     double tau; //We only need the Tau output, ignore the p-value output
-    double tau_b;
-    double ymin=Minimum(y);
-    for(int i=0;i<Length(y);i++){
+    double ymin=vector_min(y);
+    for(int i=0;i<y.size();i++){
         y[i]=y[i]-ymin/1000*ycen[i];
     }
-    vector<double> xx (x,x+Length(x));
-    vector<double> cx (xcen,xcen+Length(xcen));
-    vector<double> yy (y,y+Length(y));
-    vector<double> cy (ycen,ycen+Length(ycen));
+    vector<double> xx =x;
+    vector<double> cx =xcen;
+    vector<double> yy =y;
+    vector<double> cy =ycen;
     double n=xx.size();
     vector<double> sx=xx;
     vector<double> sy=yy;
@@ -159,39 +158,39 @@ double ktau_p(double *x, double *xcen, double *y, double *ycen){
     tt=tt+vector_sum(tplus)/2;
     uu=uu+vector_sum(uplus)/2;
     double itot=vector_sum(vector_Prod(signyx,vector_Prod(vector_scaAdd(vector_scaMul(xplus,-1),1),vector_scaAdd(vector_scaMul(yplus,-1),1))));
-    double kenS=itot/2;
+    //double kenS=itot/2;
     tau=itot/(n*(n-1));
-    double J=n*(n-1)/2;
-    tau_b=kenS/sqrt((J-tt)*(J-uu));
+    //double J=n*(n-1)/2;
+    //tau_b=kenS/sqrt((J-tt)*(J-uu));
     return (0.5-tau/2);
 }
 
 // [[Rcpp::export]]
-Rcpp::NumericVector kendalltaudistWrap(double *vect, int *np, int *mp, double *incVec)
+Rcpp::NumericVector kendalltaudistWrap(const Rcpp::NumericVector vect,const  int np, int mp,const Rcpp::NumericVector incVec)
 {
-    Rcpp::NumericVector dist(Length(vect));
+    Rcpp::NumericVector dist(mp*mp);
     //I/O variables
     //n number of elements in vect and m the number of vectors
     //vect to be processed
     // comp    should be of size dimN^2*dimM
-    int n = *np;
-    int m = *mp;
+    int n = np;
+    int m = mp;
     //Internal variables
-    int i,j,k,l;//indices
-    double x[n];
-    double y[n];
-    double xc[n];
-    double yc[n];
+    int i,k,l;//indices
+    vector<double> x(n);
+    vector<double> y(n);
+    vector<double> xc(n);
+    vector<double> yc(n);
     int tempTauDist;
     for(k=0;k<m;k++){
       for (i=0;i<n;i++){
-        x[i]=vect[i+k*n];
-        xc[i]=incVec[i+k*n];
+        x[i]=(vect[i+k*n]);
+        xc[i]=(incVec[i+k*n]);
       }
       for(l=k+1;l<m;l++){
         for(i=0;i<n;i++){
-            y[i]=vect[i+k*n];
-            yc[i]=incVec[i+l*n];
+            y[i]=(vect[i+k*n]);
+            yc[i]=(incVec[i+l*n]);
         }
         tempTauDist=ktau_p(x,xc,y,yc);      //computes cenken for each pair of vectors
         dist[k+l*m]=tempTauDist;
