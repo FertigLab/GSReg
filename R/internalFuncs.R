@@ -73,6 +73,7 @@ GSReg.Check.input <- function(V,
   }  
 }
 
+
 ##################################################
 ##################################################
 ### internal function for calculating the variance
@@ -198,6 +199,7 @@ GSReg.Variance.Wrap <- function(pathwayexp, incVec, samplesC1, samplesC2, distFu
   #mypvalue=2*(1-pnorm(abs(myzscore)))))
   
 }
+
 
 ##################################################
 ##################################################
@@ -334,6 +336,7 @@ GSReg.Variance <- function(pathwayexp, samplesC1, samplesC2,distFunc = GSReg.ken
 #   GSReg.Check.input(V)
 #   n <- dim(V)[1]
 #   m <- dim(V)[2]
+#   # TODO convert for Rcpp
 #   d <-.C("Nij",
 #         as.double(V),
 #         as.integer(dim(V)[1]),
@@ -378,12 +381,8 @@ GSReg.DIRAC.mu<-function(V, alpha = 0.0)
   GSReg.Check.input(V)
   n <- dim(V)[1]
   m <- dim(V)[2]
-  d <-.C("Nij",
-         as.double(V),
-         as.integer(dim(V)[1]),
-         as.integer(dim(V)[2]),
-         as.double(matrix(data= 0 ,ncol=n,nrow=n)))
-  pij = d[[4]]/m   #pij = p(V_i<V_j)
+  d <- Nij(V)
+  pij <- d/m
   
   dim(pij) <- c(n,n)
   rownames(pij) <- rownames(V)
@@ -448,8 +447,6 @@ GSReg.Prune <- function(pathways,genenames, minGeneNum=5)
   }else{ return(prunedpathways)}
 }
 
-
-
 ##################################################
 ##################################################
 ### Calculate the normalized kendall-tau-distance between
@@ -463,15 +460,15 @@ GSReg.kendall.tau.distance.internal.Wrap <- function(V,incVec){
   
   n <- dim(V)[1]
   m <- dim(V)[2]
-  
-  d <- .C("kendalltaudistWrap",
-          as.double(V),
-          as.integer(dim(V)[1]),
-          as.integer(dim(V)[2]),
-          as.double(incVec),
-          as.double(matrix(data= 0 ,ncol=m,nrow=m)))
-  dist <- d[[5]]
-  #dim(dist) <- c(m,m)
+  dist <- kendalltaudistWrap(as.double(V),as.integer(n),as.integer(m),as.double(incVec))
+  #d <- .C("kendalltaudistWrap",
+  #        as.double(V),
+  #        as.integer(dim(V)[1]),
+  #        as.integer(dim(V)[2]),
+  #        as.double(incVec),
+  #        as.double(matrix(data= 0 ,ncol=m,nrow=m)))
+  #dist <- d[[5]]
+  dim(dist) <- c(m,m)
   #for (i in 1:m){
   #  for (j in 1:m){
   #    tempI=sum(incVec[,i]&incVec[,j])
@@ -497,13 +494,7 @@ GSReg.kendall.tau.distance.internal <- function(V){
   
   n <- dim(V)[1]
   m <- dim(V)[2]
-  
-  d <- .C("kendalltaudist",
-          as.double(V),
-          as.integer(dim(V)[1]),
-          as.integer(dim(V)[2]),
-          as.double(matrix(data= 0 ,ncol=m,nrow=m)),PACKAGE = "GSReg")
-  dist <- d[[4]]
+  dist <- kendalltaudist(V)
   dim(dist) <- c(m,m)
   rownames(dist) <- colnames(V)
   colnames(dist) <- colnames(V)
@@ -533,13 +524,7 @@ GSReg.kendall.tau.distance.Restricted.internal <- function(V, RestMat){
   n <- dim(V)[1]
   m <- dim(V)[2]
   
-  d <- .C("kendalltaudistRestricted",
-          as.double(V),
-          as.integer(dim(V)[1]),
-          as.integer(dim(V)[2]),
-          as.integer(RestMat),
-          as.double(matrix(data= 0 ,ncol=m,nrow=m)),PACKAGE = "GSReg")
-  dist <- d[[5]]
+  dist <- kendalltaudistRestricted(V, RestMat)
   dim(dist) <- c(m,m)
   rownames(dist) <- colnames(V)
   colnames(dist) <- colnames(V)
@@ -568,14 +553,8 @@ GSReg.kendall.tau.distance.Restricted.Sparse.internal <- function(V, RestMat){
   
   n <- dim(V)[1]
   m <- dim(V)[2]
-  
-  d <- .C("kendalltaudistRestricted",
-          as.double(V),
-          as.integer(dim(V)[1]),
-          as.integer(dim(V)[2]),
-          as.integer(RestMat),
-          as.double(matrix(data= 0 ,ncol=m,nrow=m)),PACKAGE = "GSReg")
-  dist <- d[[5]]
+
+  dist <- kendalltaudistRestricted(V, RestMat)
   dim(dist) <- c(m,m)
   rownames(dist) <- colnames(V)
   colnames(dist) <- colnames(V)
@@ -595,16 +574,10 @@ GSReg.kendall.tau.distance.template.internal <- function(V, Temp){
   
   n <- dim(V)[1]
   m <- dim(V)[2]
-  
+
   matchedTemp <- Temp[rownames(V),rownames(V)]
-  
-  d <- .C("kendalltaudistFromTemp",
-          as.double(V),
-          as.integer(dim(V)[1]),
-          as.integer(dim(V)[2]),
-          as.integer(matchedTemp),
-          as.double(vector( mode= "numeric" ,length = m)),PACKAGE = "GSReg")
-  mydist <- d[[5]]
+  mydist <- kendalltaudistFromTemp(V, matchedTemp)
+
   names(mydist) <- colnames(V)
   return(mydist/(sum(Temp)-sum(diag(Temp))+1e-7))
 }

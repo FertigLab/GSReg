@@ -3,6 +3,7 @@
 ##########        Bahman Afsari   ##########
 ##########        Elana J. Fertig ##########
 
+
 ###########################################
 #### EVA Wrapper Analysis Function
 ###########################################
@@ -46,6 +47,7 @@ GSReg.GeneSets.EVA.Wrap <- function(geneexpres,
   }
   return(values)
 }
+
 
 ###########################################
 #### EVA Analysis Function
@@ -122,10 +124,11 @@ GSReg.GeneSets.DIRAC <- function(geneexpres,pathways,phenotypes,Nperm=0, alpha =
   }
 }
 
+
 ##################################################
 ##################################################
 ### Calculate the normalized kendall-tau-distance between
-### columns of V
+### columns of V while allowing for censoring
 ### Outcome: Z(i,j) = #(I(I(V_l^i<V_k^i)!=I(V_l^j<V_k^j)))/(n(n-1)/2)
 ##################################################
 
@@ -135,6 +138,8 @@ GSReg.kendall.tau.distance.Wrap <- function(V,incVec){
   
   return(GSReg.kendall.tau.distance.internal.Wrap(V,incVec))
 }
+
+
 
 ##################################################
 ##################################################

@@ -1,11 +1,11 @@
-useDynLib(GSReg,.registration = TRUE)
+useDynLib(GSReg)
 
-export(	GSReg.GeneSets.EVA,
-		GSReg.GeneSets.DIRAC,
-    GSReg.kendall.tau.distance.restricted,
-    GSReg.kendall.tau.distance.template,
-    GSReg.kendall.tau.distance,
-    GSReg.kendall.tau.distance.Wrap,
-    GSReg.GeneSets.EVA.Wrap,
-		GSReg.overlapJunction,
-		GSReg.SEVA)
+export(GSReg.GeneSets.EVA)
+export(GSReg.GeneSets.DIRAC)
+export(GSReg.kendall.tau.distance.restricted)
+export(GSReg.kendall.tau.distance.template)
+export(GSReg.kendall.tau.distance)
+export(GSReg.overlapJunction)
+export(GSReg.SEVA)
+export(GSReg.kendall.tau.distance.Wrap)
+export(GSReg.GeneSets.EVA.Wrap)

@@ -1,13 +1,14 @@
 Package: GSReg
-Version: 1.14.0
-Date: 2018-02-09
+Version: 1.15.0
+Date: 2018-02-21
 Title: Gene Set Regulation (GS-Reg)
 Author: Bahman Afsari <bahman@jhu.edu>, Elana J. Fertig
     <ejfertig@jhmi.edu>
 Maintainer: Bahman Afsari <bahman@jhu.edu>, Elana J. Fertig
  <ejfertig@jhmi.edu>
 Depends: R (>= 2.13.1), Homo.sapiens, org.Hs.eg.db, GenomicFeatures,
-        AnnotationDbi
+        AnnotationDbi, Rcpp
+LinkingTo: Rcpp
 Suggests: GenomicRanges, GSBenchMark
 Description: A package for gene set analysis based on the variability
     of expressions as well as a method to detect Alternative Splicing Events .
