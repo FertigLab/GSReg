@@ -102,13 +102,13 @@ vector<double> sign(vector<double> vec){
 double ktau_p(vector<double> x, vector<double> xcen, vector<double> y, vector<double> ycen){
     double tau; //We only need the Tau output, ignore the p-value output
     double ymin=vector_min(y);
-    for(int i=0;i<y.size();i++){
-        y[i]=y[i]-ymin/1000*ycen[i];
+    vector<double> yy=y;
+    for(int i=0;i<yy.size();i++){
+        yy[i]=yy[i]-ymin/1000*ycen[i];
     }
-    vector<double> xx =x;
-    vector<double> cx =xcen;
-    vector<double> yy =y;
-    vector<double> cy =ycen;
+    vector<double> xx=x;
+    vector<double> cx=xcen;
+    vector<double> cy=ycen;
     double n=xx.size();
     vector<double> sx=xx;
     vector<double> sy=yy;
@@ -118,6 +118,7 @@ double ktau_p(vector<double> x, vector<double> xcen, vector<double> y, vector<do
     sy.erase(unique(sy.begin(),sy.end()),sy.end());
     double delx=vector_min(vector_diff(sx))/1000;
     double dely=vector_min(vector_diff(sy))/1000;
+    Rcpp::Rcout<<delx<<" "<<dely<<" ";
     vector<double> dupx=vector_sub(xx,vector_scaMul(cx,delx));
     vector<double> diffx=outer_Sub(dupx,dupx);
     vector<double> diffcx=outer_Sub(cx,cx);
@@ -127,40 +128,41 @@ double ktau_p(vector<double> x, vector<double> xcen, vector<double> y, vector<do
     vector<double> diffcy=outer_Sub(cy,cy);
     vector<double> yplus=outer_Sub(cy,vector_scaMul(cy,-1));
     vector<double> signyx=sign(vector_Prod(diffy,diffx));
-    double tt=(vector_sum(vector_scaAdd(vector_scaMul(vector_abs(sign(diffx)),-1),1))-n)/2;
-    double uu=(vector_sum(vector_scaAdd(vector_scaMul(vector_abs(sign(diffy)),-1),1))-n)/2;
-    vector<double> cix=vector_Prod(sign(diffcx),diffx);
+    //double tt=(vector_sum(vector_scaAdd(vector_scaMul(vector_abs(sign(diffx)),-1),1))-n)/2;
+    //double uu=(vector_sum(vector_scaAdd(vector_scaMul(vector_abs(sign(diffy)),-1),1))-n)/2;
+    vector<double> cix=vector_Prod(sign(diffcx),sign(diffx));
     for(int i=0;i<cix.size();i++){
         if(cix[i]<=0){cix[i]=0;} 
         else{cix[i]=1;} 
     }
-    tt=tt+vector_sum(cix)/2;
+    //tt=tt+vector_sum(cix)/2;
     signyx=vector_Prod(signyx,vector_scaAdd(vector_scaMul(cix,-1),1));
-    vector<double> ciy=vector_Prod(sign(diffcy),diffy);
+    vector<double> ciy=vector_Prod(sign(diffcy),sign(diffy));
     for(int i=0;i<ciy.size();i++){
         if(ciy[i]<=0){ciy[i]=0;} 
         else{ciy[i]=1;} 
     }
-    uu=uu+vector_sum(ciy)/2;
+    //uu=uu+vector_sum(ciy)/2;
     signyx=vector_Prod(signyx,vector_scaAdd(vector_scaMul(ciy,-1),1));
     for(int i=0;i<xplus.size();i++){
-        if(xplus[i]<=0){xplus[i]=0;} 
+        if(xplus[i]<=1){xplus[i]=0;} 
         else{xplus[i]=1;} 
     }
     for(int i=0;i<yplus.size();i++){
-        if(yplus[i]<=0){yplus[i]=0;} 
+        if(yplus[i]<=1){yplus[i]=0;} 
         else{yplus[i]=1;} 
     }
-    diffx=vector_abs(sign(diffx));
-    diffy=vector_abs(sign(diffy));
-    vector<double> tplus=vector_Prod(xplus,diffx);
-    vector<double> uplus=vector_Prod(yplus,diffy);
-    tt=tt+vector_sum(tplus)/2;
-    uu=uu+vector_sum(uplus)/2;
+    //diffx=vector_abs(sign(diffx));
+    //diffy=vector_abs(sign(diffy));
+    //vector<double> tplus=vector_Prod(xplus,diffx);
+    //vector<double> uplus=vector_Prod(yplus,diffy);
+    //tt=tt+vector_sum(tplus)/2;
+    //uu=uu+vector_sum(uplus)/2;
     double itot=vector_sum(vector_Prod(signyx,vector_Prod(vector_scaAdd(vector_scaMul(xplus,-1),1),vector_scaAdd(vector_scaMul(yplus,-1),1))));
     //double kenS=itot/2;
     tau=itot/(n*(n-1));
     double out=0.5-tau/2;
+    Rcpp::Rcout<<itot<<" "<<tau<<" "<<out<<std::endl;
     //double J=n*(n-1)/2;
     //tau_b=kenS/sqrt((J-tt)*(J-uu));
     return out;
