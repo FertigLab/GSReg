@@ -185,7 +185,10 @@ GSReg.Variance <- function(pathwayexp, samplesC1, samplesC2,distFunc = GSReg.ken
           zscore=zscore,  zscoreD12D1=zscoreD12D1, zscoreD12D2 = zscoreD12D2,    
          VarEta1=VarEta1,VarEta2=VarEta2, #EVA 1
          sdtotal=sqrt(abs(vartotal)),#EVA 1 sd 
-         CovD12D12p = CovD12D12p, CovD12D1p2 = CovD12D1p2, CovD1D12 = CovE1E12, CovD1D12 = CovE1E12,#EVA 2
+         CovD12D12p = CovD12D12p, 
+         CovD12D1p2 = CovD12D1p2, 
+         CovD1D12 = CovE1E12, 
+         CovD2D12 = CovE2E12,#EVA 2
          vartotD12D1 = vartotD12D1, vartotD12D2 = vartotD12D2,
          pvalue=pvalue,
          pvalueD12D1 = pvalueD12D1, 
